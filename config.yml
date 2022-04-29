@@ -1,0 +1,12 @@
+port:
+
+oauthStateString:
+google:
+  clientID:
+  clientSecret:
+
+db:
+  user: ""
+  password: ""
+  dbName: ""
+  sslMode: ""
