@@ -26,5 +26,5 @@ type Post struct {
 
 type Like struct {
 	PostId int `form:"user_id" json:"user_id" xml:"user_id"  binding:"required"`
-	Amount int `form:"user_id" json:"user_id" xml:"user_id"  binding:"required"`
+	Amount int `form:"amount" json:"amount" xml:"amount"  binding:"required"`
 }

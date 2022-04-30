@@ -52,7 +52,7 @@ func GetPostsFromUser(userId string) ([]PostSchema, error) {
 		userId,
 	)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 		return posts, err
 	}
 
@@ -65,8 +65,7 @@ func GetPostsFromUser(userId string) ([]PostSchema, error) {
 
 		err := rows.Scan(&postId, &userId, &content, &createdOn)
 		if err != nil {
-			log.Fatal(err)
-			return posts, err
+			fmt.Println(err)
 		}
 
 		post := &Post{userId, content, createdOn}
@@ -79,7 +78,7 @@ func GetPostsFromUser(userId string) ([]PostSchema, error) {
 
 func WritePost(post Post) (string, error) {
 	sqlQuery := `
-	INSERT INTO posts(user_id, content, createdOn)
+	INSERT INTO posts(user_id, content, created_on)
 	VALUES ($1, $2, $3)
 	RETURNING post_id;
 	`

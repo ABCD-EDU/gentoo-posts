@@ -22,6 +22,8 @@ func main() {
 	{
 		v1.GET("/", services.HandleMain)
 		v1.POST("/register", services.HandleRegistration)
+		v1.POST("/submit-post", services.HandlePostContent)
+		v1.GET("/posts", services.GetUserTimeline)
 	}
 
 	port := viper.GetString("port")

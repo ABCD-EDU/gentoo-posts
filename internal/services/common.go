@@ -34,18 +34,3 @@ func HandleRegistration(c *gin.Context) {
 		"status": "success",
 	})
 }
-
-func HandlePost(c *gin.Context) {
-	//	userId := c.Query("user_id")
-	//	content := c.Query("content")
-	//	createdOn := time.Now()
-	//
-	//	var post models.Post
-	//	if err := c.ShouldBindJSON(&post); err != nil {
-	//		c.JSON(http.StatusBadRequest, gin.H{
-	//			"error": err.Error(),
-	//		})
-	//	}
-	//
-	//	models.WritePost()
-}
