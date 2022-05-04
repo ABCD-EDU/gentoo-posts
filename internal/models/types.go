@@ -28,3 +28,13 @@ type Like struct {
 	PostId int `form:"user_id" json:"user_id" xml:"user_id"  binding:"required"`
 	Amount int `form:"amount" json:"amount" xml:"amount"  binding:"required"`
 }
+
+type Model struct {
+	TaskId int          `form:"task_id" json:"task_id" xml:"task_id"  binding:"required"`
+	Scores []ModelScore `form:"scores" json:"scores" xml:"scores"  binding:"required"`
+}
+
+type ModelScore struct {
+	Class string  `form:"class_value" json:"class_value" xml:"class_value"  binding:"required"`
+	Score float32 `form:"score" json:"score" xml:"score"  binding:"required"`
+}

@@ -13,6 +13,10 @@ func HandlePostContent(c *gin.Context) {
 	var post models.Post
 	if err := c.ShouldBindJSON(&post); err != nil {
 		fmt.Println(err)
+		fmt.Printf("ERROR WRITING TO DB: %s\n", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "fail",
+		})
 	}
 
 	post.CreatedOn = time.Now()
@@ -22,6 +26,7 @@ func HandlePostContent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status": "fail",
 		})
+		return
 	}
 
 	postInfo := models.PostSchema{PostId: postId, PostInfo: post}
