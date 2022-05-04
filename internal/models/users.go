@@ -4,15 +4,16 @@ import "fmt"
 
 func WriteUserRegistration(user UserSchema) (string, error) {
 	sqlQuery := `
-			INSERT INTO users(user_id, username, email, google_photo)
-			VALUES($1,$2,$3,$4)
+			INSERT INTO users(user_id, username, email, google_photo, is_admin)
+			VALUES($1,$2,$3,$4,$5)
 		`
 
-	fmt.Printf("id: %s\nusername: %s\nemail: %s\nphoto: %s\n",
+	fmt.Printf("id: %s\nusername: %s\nemail: %s\nphoto: %s\nisAdmin: %s\n",
 		user.UserId,
 		user.UserInfo.Username,
 		user.UserInfo.Email,
 		user.UserInfo.Photo,
+		"false",
 	)
 
 	_, err := db.Exec(
@@ -21,6 +22,7 @@ func WriteUserRegistration(user UserSchema) (string, error) {
 		user.UserInfo.Username,
 		user.UserInfo.Email,
 		user.UserInfo.Photo,
+		false,
 	)
 	if err != nil {
 		fmt.Println(err)
