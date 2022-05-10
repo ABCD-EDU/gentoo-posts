@@ -11,12 +11,13 @@ import (
 
 func HandlePostContent(c *gin.Context) {
 	var post models.Post
+	fmt.Println(c.Query("user_id"))
 	if err := c.ShouldBindJSON(&post); err != nil {
-		fmt.Println(err)
 		fmt.Printf("ERROR WRITING TO DB: %s\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status": "fail",
 		})
+		return
 	}
 
 	post.CreatedOn = time.Now()

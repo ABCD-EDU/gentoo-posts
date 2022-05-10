@@ -42,39 +42,113 @@ func GetPostByID(postId string) (*PostSchema, error) {
 	return post, nil
 }
 
-func GetPostsFromUser(userId string) ([]PostSchema, error) {
-	posts := []PostSchema{}
+/*
+	TRANSACTION PROCESS:
+	1. Get user info from given user_id
+	2. Get specific post from given user_id
+	3. Get metrics of the post if user_id is admin, else, empty array
+*/
+func GetPostsFromUser(userId string) ([]PostResponse, error) {
+	posts := []PostResponse{}
 
-	sqlQuery := `
-	SELECT * FROM posts
+	userQuery := `
+	SELECT is_admin FROM users
 	WHERE user_id=$1
-	ORDER BY created_on DESC;
+	LIMIT 1`
+	postQuery := `
+	SELECT 
+		u.user_id,
+		u.email,
+		u.username,
+		u.google_photo,
+
+		p.post_id,
+		p.content,
+		p.created_on,
+
+		m.hate_score,
+		m.normal_score,
+		m.offensive_score,
+		m.profanity_score,
+		m.race_score,
+		m.religion_score,
+		m.sex_score,
+		m.other_score,
+		m.none_score	
+	FROM posts p
+	INNER JOIN metrics m
+		ON p.post_id=m.post_id
+	INNER JOIN users u
+		ON u.user_id=p.user_id
+	WHERE u.user_id=$1;
 	`
 
-	rows, err := db.Query(
-		sqlQuery,
-		userId,
-	)
-	if err != nil {
-		fmt.Println(err)
+	var queryId string
+	if err := db.QueryRow(userQuery, userId).Scan(&queryId); err != nil {
 		return posts, err
 	}
 
+	rows, err := db.Query(postQuery, userId)
+	if err != nil {
+		return posts, err
+	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var postId, userId string
-		var content string
+		// USER VARS
+		var userId, email, username, googlePhoto string
+		// POST VARS
+		var postId, content string
 		var createdOn time.Time
+		// METRICS SCORE
+		var hateScore, normalScore, offnScore, prfnScore, raceScore, religionScore, sexScore, otherScore, noneScore float32
 
-		err := rows.Scan(&postId, &userId, &content, &createdOn)
+		err := rows.Scan(
+			&userId,
+			&email,
+			&username,
+			&googlePhoto,
+			&postId,
+			&content,
+			&createdOn,
+			&hateScore,
+			&normalScore,
+			&offnScore,
+			&prfnScore,
+			&raceScore,
+			&religionScore,
+			&sexScore,
+			&otherScore,
+			&noneScore,
+		)
 		if err != nil {
-			fmt.Println(err)
+			return posts, err
 		}
 
-		post := &Post{userId, content, createdOn}
-		postSchema := &PostSchema{PostId: postId, PostInfo: *post}
-		posts = append(posts, *postSchema)
+		// USER STRUCTS
+		userInfo := &User{Username: username, Email: email, Photo: googlePhoto}
+		user := &UserSchema{UserId: userId, UserInfo: *userInfo}
+
+		// METRIC STRUCTS
+		metrics := &Metrics{
+			HateScore:      hateScore,
+			NormalScore:    normalScore,
+			OffensiveScore: offnScore,
+			ProfanityScore: prfnScore,
+			RaceScore:      raceScore,
+			ReligionScore:  religionScore,
+			SexScore:       sexScore,
+			OtherScore:     otherScore,
+			NoneScore:      noneScore,
+		}
+
+		// POST STRUCT
+		postInfo := &Post{UserId: userId, Content: content, CreatedOn: createdOn}
+		post := &PostSchema{PostId: postId, PostInfo: *postInfo}
+
+		postResponse := &PostResponse{User: *user, Post: *post, HateScores: *metrics}
+		fmt.Println(postResponse)
+		posts = append(posts, *postResponse)
 	}
 
 	return posts, nil

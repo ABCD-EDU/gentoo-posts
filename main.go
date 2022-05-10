@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/abcd-edu/gentoo-posts/internal/configs"
 	"github.com/abcd-edu/gentoo-posts/internal/models"
 	"github.com/abcd-edu/gentoo-posts/internal/services"
@@ -27,7 +25,6 @@ func main() {
 	}
 
 	port := viper.GetString("port")
-	fmt.Println("HELLO THIS IS THE PORT! " + port)
 	router.Run(":" + port)
 }
 
