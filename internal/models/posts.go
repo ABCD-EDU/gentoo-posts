@@ -61,6 +61,7 @@ func GetPostsFromUser(userId string) ([]PostResponse, error) {
 		u.email,
 		u.username,
 		u.google_photo,
+		u.is_admin,
 
 		p.post_id,
 		p.content,
@@ -80,11 +81,12 @@ func GetPostsFromUser(userId string) ([]PostResponse, error) {
 		ON p.post_id=m.post_id
 	INNER JOIN users u
 		ON u.user_id=p.user_id
-	WHERE u.user_id=$1;
+	WHERE u.user_id=$1
+	ORDER BY p.created_on DESC;
 	`
 
-	var queryId string
-	if err := db.QueryRow(userQuery, userId).Scan(&queryId); err != nil {
+	var isAdmin bool
+	if err := db.QueryRow(userQuery, userId).Scan(&isAdmin); err != nil {
 		return posts, err
 	}
 
@@ -97,6 +99,7 @@ func GetPostsFromUser(userId string) ([]PostResponse, error) {
 	for rows.Next() {
 		// USER VARS
 		var userId, email, username, googlePhoto string
+		var isAdmin bool
 		// POST VARS
 		var postId, content string
 		var createdOn time.Time
@@ -108,6 +111,7 @@ func GetPostsFromUser(userId string) ([]PostResponse, error) {
 			&email,
 			&username,
 			&googlePhoto,
+			&isAdmin,
 			&postId,
 			&content,
 			&createdOn,
@@ -126,7 +130,7 @@ func GetPostsFromUser(userId string) ([]PostResponse, error) {
 		}
 
 		// USER STRUCTS
-		userInfo := &User{Username: username, Email: email, Photo: googlePhoto}
+		userInfo := &User{Username: username, Email: email, Photo: googlePhoto, IsAdmin: isAdmin}
 		user := &UserSchema{UserId: userId, UserInfo: *userInfo}
 
 		// METRIC STRUCTS
@@ -146,9 +150,13 @@ func GetPostsFromUser(userId string) ([]PostResponse, error) {
 		postInfo := &Post{UserId: userId, Content: content, CreatedOn: createdOn}
 		post := &PostSchema{PostId: postId, PostInfo: *postInfo}
 
-		postResponse := &PostResponse{User: *user, Post: *post, HateScores: *metrics}
-		fmt.Println(postResponse)
-		posts = append(posts, *postResponse)
+		var postResponse PostResponse
+		if isAdmin {
+			postResponse = PostResponse{User: *user, Post: *post, HateScores: *metrics}
+		} else {
+			postResponse = PostResponse{User: *user, Post: *post, HateScores: Metrics{}}
+		}
+		posts = append(posts, postResponse)
 	}
 
 	return posts, nil

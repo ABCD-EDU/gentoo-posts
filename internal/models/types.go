@@ -11,6 +11,7 @@ type User struct {
 	Username string `form:"username" json:"username" xml:"username"  binding:"required"`
 	Email    string `form:"email" json:"email" xml:"email"  binding:"required"`
 	Photo    string `form:"google_photo" json:"google_photo" xml:"google_photo"  binding:"required"`
+	IsAdmin  bool   `form:"is_admin" json:"is_admin" xml:"is_admin"  binding:"required"`
 }
 
 type PostResponse struct {
@@ -36,7 +37,7 @@ type Like struct {
 }
 
 type Metrics struct {
-	HateScore      float32 `form:"hate_score" json:"hate_score" xml:"normal_score"  binding:"required"`
+	HateScore      float32 `form:"hate_score" json:"hate_score" xml:"hate_score"  binding:"required"`
 	NormalScore    float32 `form:"normal_score" json:"normal_score" xml:"normal_score"  binding:"required"`
 	OffensiveScore float32 `form:"offensive_score" json:"offensive_score" xml:"offensive_score"  binding:"required"`
 	ProfanityScore float32 `form:"profanity_score" json:"profanity_score" xml:"profanity_score"  binding:"required"`
