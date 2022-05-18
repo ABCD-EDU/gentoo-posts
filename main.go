@@ -21,7 +21,12 @@ func main() {
 		v1.GET("/", services.HandleMain)
 		v1.POST("/register", services.HandleRegistration)
 		v1.POST("/submit-post", services.HandlePostContent)
-		v1.GET("/user-timeline", services.GetUserTimeline)
+		v1.GET("/user/profile", services.GetUserPosts)
+		v1.GET("/user/timeline", services.GetUserTimeline)
+		v1.POST("/user/mute", services.MuteUser)
+		v1.POST("/user/ban", services.BanUser)
+		v1.GET("/post", services.GetPost)
+		v1.GET("/post/latest", services.GetLatestPosts)
 	}
 
 	port := viper.GetString("port")

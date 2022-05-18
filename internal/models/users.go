@@ -32,3 +32,32 @@ func WriteUserRegistration(user UserSchema) (string, error) {
 
 	return user.UserId, nil
 }
+
+func MuteUser(userId string) error {
+	sqlQuery := `
+		UPDATE users
+		SET can_post=false
+		WHERE user_id=$1
+		`
+
+	_, err := db.Exec(sqlQuery, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func BanUser(userId string) error {
+	sqlQuery := `
+		DELETE FROM users
+		WHERE user_id=$1
+		`
+
+	_, err := db.Exec(sqlQuery, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

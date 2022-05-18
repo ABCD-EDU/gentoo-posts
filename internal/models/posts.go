@@ -1,42 +1,203 @@
 package models
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 )
 
-func GetPostByID(postId string) (*PostSchema, error) {
-	post := new(PostSchema)
+func GetPosts(userId string, authId string, offset string, limit string, postQuery string, queryType string) ([]PostResponse, error) {
+	posts := []PostResponse{}
 
-	sqlQuery := `
-		SELECT * FROM posts
-		WHERE post_id=$1
-		LIMIT 1;
-		`
+	userQuery := `
+	SELECT is_admin FROM users
+	WHERE user_id=$1
+	LIMIT 1`
 
-	rows, err := db.Query(sqlQuery, postId)
+	var isAdmin bool
+	if err := db.QueryRow(userQuery, authId).Scan(&isAdmin); err != nil {
+		return posts, err
+	}
+
+	var rows *sql.Rows
+	var err error
+	if queryType == "timeline" {
+		rows, err = db.Query(postQuery, userId, offset, limit)
+	} else if queryType == "profile" {
+		rows, err = db.Query(postQuery, userId, offset, limit)
+	} else if queryType == "latest" {
+		rows, err = db.Query(postQuery, userId)
+	}
 	if err != nil {
-		log.Fatal(err)
+		return posts, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		// USER VARS
+		var userId, email, username, googlePhoto string
+		var userAdmin bool
+		// POST VARS
+		var postId, content string
+		var createdOn time.Time
+		// METRICS SCORE
+		var hateScore, normalScore, offnScore, prfnScore, raceScore, religionScore, sexScore, otherScore, noneScore float32
+
+		err := rows.Scan(
+			&userId,
+			&email,
+			&username,
+			&googlePhoto,
+			&userAdmin,
+			&postId,
+			&content,
+			&createdOn,
+			&hateScore,
+			&normalScore,
+			&offnScore,
+			&prfnScore,
+			&raceScore,
+			&religionScore,
+			&sexScore,
+			&otherScore,
+			&noneScore,
+		)
+		if err != nil {
+			return posts, err
+		}
+
+		// USER STRUCTS
+		userInfo := &User{Username: username, Email: email, Photo: googlePhoto, IsAdmin: userAdmin}
+		user := &UserSchema{UserId: userId, UserInfo: *userInfo}
+
+		// METRIC STRUCTS
+		metrics := &Metrics{
+			HateScore:      hateScore,
+			NormalScore:    normalScore,
+			OffensiveScore: offnScore,
+			ProfanityScore: prfnScore,
+			RaceScore:      raceScore,
+			ReligionScore:  religionScore,
+			SexScore:       sexScore,
+			OtherScore:     otherScore,
+			NoneScore:      noneScore,
+		}
+
+		// POST STRUCT
+		postInfo := &Post{UserId: userId, Content: content, CreatedOn: createdOn}
+		post := &PostSchema{PostId: postId, PostInfo: *postInfo}
+
+		var postResponse PostResponse
+		if isAdmin {
+			postResponse = PostResponse{User: *user, Post: *post, HateScores: *metrics}
+		} else {
+			postResponse = PostResponse{User: *user, Post: *post, HateScores: Metrics{}}
+		}
+		posts = append(posts, postResponse)
+	}
+
+	return posts, nil
+
+}
+
+func GetPostByID(authId string, postId string) (PostResponse, error) {
+	post := PostResponse{}
+
+	userQuery := `
+	SELECT is_admin FROM users
+	WHERE user_id=$1
+	LIMIT 1`
+
+	var isAdmin bool
+	if err := db.QueryRow(userQuery, authId).Scan(&isAdmin); err != nil {
 		return post, err
 	}
 
-	for rows.Next() {
-		var postId, userId string
-		var content string
-		var createdOn time.Time
+	postQuery := `
+	SELECT 
+		u.user_id,
+		u.email,
+		u.username,
+		u.google_photo,
+		u.is_admin,
 
-		err := rows.Scan(&postId, &userId, &content, &createdOn)
-		if err != nil {
-			log.Fatal(err)
-			return post, err
-		}
+		p.content,
+		p.created_on,
 
-		postInfo := &Post{userId, content, createdOn}
-		post = &PostSchema{postId, *postInfo}
+		m.hate_score,
+		m.normal_score,
+		m.offensive_score,
+		m.profanity_score,
+		m.race_score,
+		m.religion_score,
+		m.sex_score,
+		m.other_score,
+		m.none_score	
+	FROM posts p
+	INNER JOIN metrics m
+		ON p.post_id=m.post_id
+	INNER JOIN users u
+		ON u.user_id=p.user_id
+	WHERE p.post_id=$1;
+	`
+	// USER VARS
+	var userId, email, username, googlePhoto string
+	var userAdmin bool
+	// POST VARS
+	var content string
+	var createdOn time.Time
+	// METRICS SCORE
+	var hateScore, normalScore, offnScore, prfnScore, raceScore, religionScore, sexScore, otherScore, noneScore float32
+
+	if err := db.QueryRow(postQuery, postId).Scan(
+		&userId,
+		&email,
+		&username,
+		&googlePhoto,
+		&userAdmin,
+		&content,
+		&createdOn,
+		&hateScore,
+		&normalScore,
+		&offnScore,
+		&prfnScore,
+		&raceScore,
+		&religionScore,
+		&sexScore,
+		&otherScore,
+		&noneScore,
+	); err != nil {
+		return post, err
+	}
+
+	// USER STRUCTS
+	userInfo := &User{Username: username, Email: email, Photo: googlePhoto, IsAdmin: userAdmin}
+	user := &UserSchema{UserId: userId, UserInfo: *userInfo}
+
+	// METRIC STRUCTS
+	metrics := &Metrics{
+		HateScore:      hateScore,
+		NormalScore:    normalScore,
+		OffensiveScore: offnScore,
+		ProfanityScore: prfnScore,
+		RaceScore:      raceScore,
+		ReligionScore:  religionScore,
+		SexScore:       sexScore,
+		OtherScore:     otherScore,
+		NoneScore:      noneScore,
+	}
+
+	// POST STRUCT
+	postInfo := &Post{UserId: userId, Content: content, CreatedOn: createdOn}
+	postSchema := &PostSchema{PostId: postId, PostInfo: *postInfo}
+
+	if isAdmin {
+		post = PostResponse{User: *user, Post: *postSchema, HateScores: *metrics}
+	} else {
+		post = PostResponse{User: *user, Post: *postSchema, HateScores: Metrics{}}
 	}
 
 	return post, nil
