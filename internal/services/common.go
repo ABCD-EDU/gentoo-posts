@@ -15,8 +15,9 @@ func HandleMain(c *gin.Context) {
 }
 
 func HandleRegistration(c *gin.Context) {
-	var user models.UserSchema
+	var user models.TempUser
 	if err := c.ShouldBindJSON(&user); err != nil {
+		fmt.Println(err)
 		fmt.Println("ERROR WITH PARSING JSON BODY")
 		return
 	}

@@ -2,10 +2,10 @@ package models
 
 import "fmt"
 
-func WriteUserRegistration(user UserSchema) (string, error) {
+func WriteUserRegistration(user TempUser) (string, error) {
 	sqlQuery := `
-			INSERT INTO users(user_id, username, email, google_photo, is_admin)
-			VALUES($1,$2,$3,$4,$5)
+			INSERT INTO users(user_id, username, email, google_photo, can_post, is_admin)
+			VALUES($1,$2,$3,$4,$5,$6)
 		`
 
 	fmt.Printf("id: %s\nusername: %s\nemail: %s\nphoto: %s\nisAdmin: %s\n",
@@ -22,6 +22,7 @@ func WriteUserRegistration(user UserSchema) (string, error) {
 		user.UserInfo.Username,
 		user.UserInfo.Email,
 		user.UserInfo.Photo,
+		true,
 		false,
 	)
 	if err != nil {
