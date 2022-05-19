@@ -62,9 +62,10 @@ func GetUserPosts(c *gin.Context) {
 	authId := c.Query("auth_id")
 	offset := c.Query("offset")
 	limit := c.Query("limit")
+	hateFilter := c.Query("hate_filter")
 
 	postQuery := `
-	SELECT 
+	SELECT
 		u.user_id,
 		u.email,
 		u.username,
@@ -85,18 +86,18 @@ func GetUserPosts(c *gin.Context) {
 		m.religion_score,
 		m.sex_score,
 		m.other_score,
-		m.none_score	
+		m.none_score
 	FROM posts p
 	INNER JOIN metrics m
 		ON p.post_id=m.post_id
 	INNER JOIN users u
 		ON u.user_id=p.user_id
-	WHERE u.user_id=$1
+	WHERE u.user_id=$1 AND m.hate_score<=$2
 	ORDER BY p.created_on DESC
-	OFFSET $2 LIMIT $3
+	OFFSET $3 LIMIT $4
 	`
 
-	posts, err := models.GetPosts(userId, authId, offset, limit, postQuery, "profile")
+	posts, err := models.GetPosts(userId, authId, offset, limit, hateFilter, postQuery, "profile")
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -117,9 +118,10 @@ func GetUserTimeline(c *gin.Context) {
 	authId := c.Query("auth_id")
 	offset := c.Query("offset")
 	limit := c.Query("limit")
+	hateFilter := c.Query("hate_filter")
 
 	postQuery := `
-	SELECT 
+	SELECT
 		u.user_id,
 		u.email,
 		u.username,
@@ -139,22 +141,22 @@ func GetUserTimeline(c *gin.Context) {
 		m.religion_score,
 		m.sex_score,
 		m.other_score,
-		m.none_score	
+		m.none_score
 	FROM posts p
 	INNER JOIN metrics m
 		ON p.post_id=m.post_id
 	INNER JOIN users u
 		ON u.user_id=p.user_id
-	WHERE u.user_id IN (
+	WHERE (u.user_id IN (
 		SELECT followed_id AS user_id
 		FROM social_graph
 		WHERE follower_id=$1
-	) OR u.user_id=$1
+	) OR u.user_id=$1) AND m.hate_score<=$2
 	ORDER BY p.created_on DESC
-	OFFSET $2 LIMIT $3;
+	OFFSET $3 LIMIT $4;
 	`
 
-	posts, err := models.GetPosts(userId, authId, offset, limit, postQuery, "timeline")
+	posts, err := models.GetPosts(userId, authId, offset, limit, hateFilter, postQuery, "timeline")
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -172,9 +174,10 @@ func GetUserTimeline(c *gin.Context) {
 func GetLatestPosts(c *gin.Context) {
 	userId := c.Query("user_id")
 	authId := c.Query("auth_id")
+	hateFilter := c.Query("hate_filter")
 
 	postQuery := `
-	SELECT 
+	SELECT
 		u.user_id,
 		u.email,
 		u.username,
@@ -193,18 +196,18 @@ func GetLatestPosts(c *gin.Context) {
 		m.religion_score,
 		m.sex_score,
 		m.other_score,
-		m.none_score	
+		m.none_score
 	FROM posts p
 	INNER JOIN metrics m
 		ON p.post_id=m.post_id
 	INNER JOIN users u
 		ON u.user_id=p.user_id
-	WHERE u.user_id!=$1
+	WHERE u.user_id!=$1 AND m.hate_score<=$2
 	ORDER BY p.created_on DESC
 	LIMIT 20;
 	`
 
-	posts, err := models.GetPosts(userId, authId, "0", "20", postQuery, "latest")
+	posts, err := models.GetPosts(userId, authId, "0", "20", hateFilter, postQuery, "latest")
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{

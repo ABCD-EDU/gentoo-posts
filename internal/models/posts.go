@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func GetPosts(userId string, authId string, offset string, limit string, postQuery string, queryType string) ([]PostResponse, error) {
+func GetPosts(userId string, authId string, offset string, limit string, hateFilter string, postQuery string, queryType string) ([]PostResponse, error) {
 	posts := []PostResponse{}
 
 	userQuery := `
@@ -25,11 +25,11 @@ func GetPosts(userId string, authId string, offset string, limit string, postQue
 	var rows *sql.Rows
 	var err error
 	if queryType == "timeline" {
-		rows, err = db.Query(postQuery, userId, offset, limit)
+		rows, err = db.Query(postQuery, userId, hateFilter, offset, limit)
 	} else if queryType == "profile" {
-		rows, err = db.Query(postQuery, userId, offset, limit)
+		rows, err = db.Query(postQuery, userId, hateFilter, offset, limit)
 	} else if queryType == "latest" {
-		rows, err = db.Query(postQuery, userId)
+		rows, err = db.Query(postQuery, userId, hateFilter)
 	}
 	if err != nil {
 		return posts, err
@@ -45,7 +45,6 @@ func GetPosts(userId string, authId string, offset string, limit string, postQue
 		var createdOn time.Time
 		// METRICS SCORE
 		var hateScore, normalScore, offnScore, prfnScore, raceScore, religionScore, sexScore, otherScore, noneScore float32
-
 		err := rows.Scan(
 			&userId,
 			&email,
@@ -117,7 +116,7 @@ func GetPostByID(authId string, postId string) (PostResponse, error) {
 	}
 
 	postQuery := `
-	SELECT 
+	SELECT
 		u.user_id,
 		u.email,
 		u.username,
@@ -135,7 +134,7 @@ func GetPostByID(authId string, postId string) (PostResponse, error) {
 		m.religion_score,
 		m.sex_score,
 		m.other_score,
-		m.none_score	
+		m.none_score
 	FROM posts p
 	INNER JOIN metrics m
 		ON p.post_id=m.post_id
@@ -217,7 +216,7 @@ func GetPostsFromUser(userId string) ([]PostResponse, error) {
 	WHERE user_id=$1
 	LIMIT 1`
 	postQuery := `
-	SELECT 
+	SELECT
 		u.user_id,
 		u.email,
 		u.username,
@@ -236,7 +235,7 @@ func GetPostsFromUser(userId string) ([]PostResponse, error) {
 		m.religion_score,
 		m.sex_score,
 		m.other_score,
-		m.none_score	
+		m.none_score
 	FROM posts p
 	INNER JOIN metrics m
 		ON p.post_id=m.post_id
